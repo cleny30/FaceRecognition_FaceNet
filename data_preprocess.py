@@ -1,13 +1,19 @@
+import os
+import shutil
 from preprocess import preprocesses
 
-input_datadir = './train_img'
-output_datadir = './aligned_img'
+def run_preprocessing(input_datadir, output_datadir):
+  obj = preprocesses(input_datadir, output_datadir)
+  nrof_images_total, nrof_successfully_aligned = obj.collect_data()
+  return nrof_images_total, nrof_successfully_aligned
 
-obj=preprocesses(input_datadir,output_datadir)
-nrof_images_total,nrof_successfully_aligned=obj.collect_data()
-
-print('Total number of images: %d' % nrof_images_total)
-print('Number of successfully aligned images: %d' % nrof_successfully_aligned)
-
-
-
+def clear_directory(directory):
+  for filename in os.listdir(directory):
+      file_path = os.path.join(directory, filename)
+      try:
+          if os.path.isfile(file_path) or os.path.islink(file_path):
+              os.unlink(file_path)
+          elif os.path.isdir(file_path):
+              shutil.rmtree(file_path)
+      except Exception as e:
+          print(f'Failed to delete {file_path}. Reason: {e}')
