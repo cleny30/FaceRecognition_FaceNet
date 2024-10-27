@@ -1,0 +1,28 @@
+# Bỏ qua thư mục môi trường ảo
+.erm/
+
+# Bỏ qua tệp liên quan đến Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Bỏ qua nhật ký và tệp hệ thống
+*.log
+*.DS_Store
+Thumbs.db
+
+# Bỏ qua file tạm
+*.swp
+*.swo
+*.bak
+
+# Bỏ qua cài đặt IDE/editor
+.vscode/
+.idea/
+
+# Bỏ qua tệp tạm của Jupyter Notebook (nếu có sử dụng)
+.ipynb_checkpoints/
+
+# Bỏ qua tệp dependencies (nếu có)
+pip-wheel-metadata/
