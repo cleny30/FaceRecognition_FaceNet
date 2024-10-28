@@ -62,10 +62,13 @@ def recognize_face(face_image):
   best_class_indices = np.argmax(predictions, axis=1)
   best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
 
-  return {
-      "detected": class_names[best_class_indices[0]],
-      "accuracy": float(best_class_probabilities[0])
-  }
+  if best_class_probabilities[0] > 0.9:
+      return {
+          "detected": class_names[best_class_indices[0]],
+          "accuracy": float(best_class_probabilities[0])
+      }
+  else:
+      return {"message": "Recognition confidence is too low"}
 
 @app.route('/upload', methods=['POST'])
 def upload_zip():
