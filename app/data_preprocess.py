@@ -1,6 +1,6 @@
 import os
 import shutil
-from preprocess import preprocesses
+from .preprocess import preprocesses
 
 def run_preprocessing(input_datadir, output_datadir):
   obj = preprocesses(input_datadir, output_datadir)

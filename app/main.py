@@ -5,21 +5,23 @@ import zipfile
 import tempfile
 import cv2
 import numpy as np
-import facenet
+from .facenet import load_model, prewhiten
 import pickle
 import shutil
 import tensorflow.compat.v1 as tf
-from classifier import training  # Import the training class
+from .classifier import training  # Import the training class
 
-from data_preprocess import run_preprocessing, clear_directory  # Import the functions
+from .data_preprocess import run_preprocessing, clear_directory  # Import the functions
+import logging
 
 app = Flask(__name__)
 CORS(app)
 
 # Define the directories for extraction and preprocessing
-EXTRACTION_PATH = 'train_img'
-OUTPUT_PATH = 'aligned_img'
-CROPPED_FACE = 'cropped_faces'
+EXTRACTION_PATH = '.app/train_img'
+OUTPUT_PATH = '.app/aligned_img'
+CROPPED_FACE = '.app/cropped_faces'
+CLASS_PATH = './app/class'
 
 # Configure TensorFlow
 tf.disable_v2_behavior()
@@ -27,11 +29,11 @@ gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.6)
 sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
 
 # Load model and parameters
-modeldir = './model/20180402-114759.pb'
-classifier_filename = './class/classifier.pkl'
+modeldir = './app/model/20180402-114759.pb'
+classifier_filename = './app/class/classifier.pkl'
 
 # Load face recognition model
-facenet.load_model(modeldir)
+load_model(modeldir)
 images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
 embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
 phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
@@ -50,7 +52,7 @@ def recognize_face(face_image):
       model, class_names = pickle.load(infile, encoding='latin1')
   # Preprocess the image
   image = cv2.resize(face_image, (160, 160))
-  image = facenet.prewhiten(image)
+  image = prewhiten(image)
   image_reshape = image.reshape(-1, 160, 160, 3)
 
   # Calculate embeddings
@@ -72,39 +74,44 @@ def recognize_face(face_image):
 
 @app.route('/upload', methods=['POST'])
 def upload_zip():
-  if 'file' not in request.files:
-      return jsonify({'error': 'No file part'}), 400
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
 
-  file = request.files['file']
-  if file.filename == '':
-      return jsonify({'error': 'No selected file'}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
 
-  if file and file.filename.endswith('.zip'):
-      with tempfile.TemporaryDirectory() as temp_dir:
-          temp_zip_path = os.path.join(temp_dir, file.filename)
-          file.save(temp_zip_path)
+        if file and file.filename.endswith('.zip'):
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_zip_path = os.path.join(temp_dir, file.filename)
+                file.save(temp_zip_path)
 
-          with zipfile.ZipFile(temp_zip_path, 'r') as zip_ref:
-              zip_ref.extractall(EXTRACTION_PATH)
+                with zipfile.ZipFile(temp_zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(EXTRACTION_PATH)
 
-      # Run the data preprocessing
-      nrof_images_total, nrof_successfully_aligned = run_preprocessing(EXTRACTION_PATH, OUTPUT_PATH)
-      clear_directory(EXTRACTION_PATH)
+            # Run the data preprocessing
+            nrof_images_total, nrof_successfully_aligned = run_preprocessing(EXTRACTION_PATH, OUTPUT_PATH)
+            clear_directory(EXTRACTION_PATH)
 
-      # Run the training process
-      print("Training Start")
-      obj = training(OUTPUT_PATH, modeldir, classifier_filename)
-      get_file = obj.main_train()
-      print('Saved classifier model to file "%s"' % get_file)
+            # Run the training process
+            print("Training Start")
+            obj = training(OUTPUT_PATH, modeldir, classifier_filename)
+            get_file = obj.main_train()
+            print('Saved classifier model to file "%s"' % get_file)
 
-      return jsonify({
-          'message': 'File successfully uploaded, extracted, processed, and trained',
-          'total_images': nrof_images_total,
-          'successfully_aligned_images': nrof_successfully_aligned,
-          'classifier_file': get_file
-      }), 200
+            return jsonify({
+                'message': 'File successfully uploaded, extracted, processed, and trained',
+                'total_images': nrof_images_total,
+                'successfully_aligned_images': nrof_successfully_aligned,
+                'classifier_file': get_file
+            }), 200
 
-  return jsonify({'error': 'Invalid file type, only .zip allowed'}), 400
+        return jsonify({'error': 'Invalid file type, only .zip allowed'}), 400
+
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 # Register the /detect endpoint only if the classifier is loaded
 
@@ -143,5 +150,5 @@ def upload_image():
 if __name__ == '__main__':
   os.makedirs(EXTRACTION_PATH, exist_ok=True)
   os.makedirs(OUTPUT_PATH, exist_ok=True)
-
-  app.run(debug=True)
+  os.makedirs(CLASS_PATH, exist_ok=True)
+  app.run(host='0.0.0.0', port=80)

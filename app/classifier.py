@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import numpy as np
-import facenet
+from .facenet import get_dataset, load_model, load_data, get_image_paths_and_labels
 import os
 import math
 import pickle
@@ -19,12 +19,12 @@ class training:
     def main_train(self):
         with tf.Graph().as_default():
             with tf.Session() as sess:
-                img_data = facenet.get_dataset(self.datadir)
-                path, label = facenet.get_image_paths_and_labels(img_data)
+                img_data = get_dataset(self.datadir)
+                path, label = get_image_paths_and_labels(img_data)
                 print('Classes: %d' % len(img_data))
                 print('Images: %d' % len(path))
 
-                facenet.load_model(self.modeldir)
+                load_model(self.modeldir)
                 images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
                 embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
                 phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
@@ -40,7 +40,7 @@ class training:
                     start_index = i * batch_size
                     end_index = min((i + 1) * batch_size, nrof_images)
                     paths_batch = path[start_index:end_index]
-                    images = facenet.load_data(paths_batch, False, False, image_size)
+                    images = load_data(paths_batch, False, False, image_size)
                     feed_dict = {images_placeholder: images, phase_train_placeholder: False}
                     emb_array[start_index:end_index, :] = sess.run(embeddings, feed_dict=feed_dict)
 

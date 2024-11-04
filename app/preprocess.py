@@ -6,8 +6,8 @@ import os
 import tensorflow.compat.v1 as tf
 
 import numpy as np
-import facenet
-import detect_face
+from .facenet import get_dataset, to_rgb
+from .detect_face import create_mtcnn, detect_face
 import imageio
 from PIL import Image
 
@@ -21,12 +21,12 @@ class preprocesses:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        dataset = facenet.get_dataset(self.input_datadir)
+        dataset = get_dataset(self.input_datadir)
         with tf.Graph().as_default():
             gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
             sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
             with sess.as_default():
-                pnet, rnet, onet = detect_face.create_mtcnn(sess, './npy')
+                pnet, rnet, onet = create_mtcnn(sess, 'app/npy')
 
         minsize = 20  # minimum size of face
         threshold = [0.5, 0.6, 0.6]  # three steps's threshold
@@ -62,11 +62,11 @@ class preprocesses:
                                 text_file.write('%s\n' % (output_filename))
                                 continue
                             if img.ndim == 2:
-                                img = facenet.to_rgb(img)
+                                img = to_rgb(img)
                                 print('to_rgb data dimension: ', img.ndim)
                             img = img[:, :, 0:3]
 
-                            bounding_boxes, _ = detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold,
+                            bounding_boxes, _ = detect_face(img, minsize, pnet, rnet, onet, threshold,
                                                                         factor)
                             nrof_faces = bounding_boxes.shape[0]
                             print('No of Detected Face: %d' % nrof_faces)
