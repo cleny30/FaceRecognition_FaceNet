@@ -72,6 +72,18 @@ def recognize_face(face_image):
   else:
       return {"message": "Recognition confidence is too low"}
 
+def clear_directory(directory_path):
+  if os.path.exists(directory_path):
+      for filename in os.listdir(directory_path):
+          file_path = os.path.join(directory_path, filename)
+          try:
+              if os.path.isfile(file_path) or os.path.islink(file_path):
+                  os.unlink(file_path)  # Remove the file
+              elif os.path.isdir(file_path):
+                  shutil.rmtree(file_path)  # Remove the directory
+          except Exception as e:
+              print(f'Failed to delete {file_path}. Reason: {e}')
+
 @app.route('/upload', methods=['POST'])
 def upload_zip():
     try:
@@ -146,6 +158,17 @@ def upload_image():
       return jsonify(results), 200
     
     return jsonify("No classifier"), 404
+
+@app.route('/delete', methods=['DELETE'])
+def clear_directories():
+  try:
+      # Clear files in OUTPUT_PATH
+      clear_directory(OUTPUT_PATH)
+      # Clear files in CLASS_PATH
+      clear_directory(CLASS_PATH)
+      return jsonify({'message': 'Directories cleared successfully'}), 200
+  except Exception as e:
+      return jsonify({'error': f'An error occurred: {e}'}), 500
 
 if __name__ == '__main__':
   os.makedirs(EXTRACTION_PATH, exist_ok=True)
