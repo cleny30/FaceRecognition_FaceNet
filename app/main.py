@@ -18,9 +18,9 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Define the directories for extraction and preprocessing
-EXTRACTION_PATH = '.app/train_img'
-OUTPUT_PATH = '.app/aligned_img'
-CROPPED_FACE = '.app/cropped_faces'
+EXTRACTION_PATH = './app/train_img'
+OUTPUT_PATH = './app/aligned_img'
+CROPPED_FACE = '/.app/cropped_faces'
 CLASS_PATH = './app/class'
 
 # Configure TensorFlow
