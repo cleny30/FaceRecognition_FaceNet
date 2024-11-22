@@ -15,7 +15,7 @@ from .data_preprocess import run_preprocessing, clear_directory  # Import the fu
 import logging
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Define the directories for extraction and preprocessing
 EXTRACTION_PATH = '.app/train_img'
@@ -46,10 +46,13 @@ def detect_and_crop_faces(image):
   return [image[y:y+h, x:x+w] for (x, y, w, h) in faces]
 
 def recognize_face(face_image):
-  classifier_loaded = os.path.exists(classifier_filename) 
-  if classifier_loaded:
-     with open(classifier_filename, 'rb') as infile:
+  classifier_loaded = os.path.exists(classifier_filename)
+  if not classifier_loaded:
+      return None  # Or handle the error as needed
+
+  with open(classifier_filename, 'rb') as infile:
       model, class_names = pickle.load(infile, encoding='latin1')
+
   # Preprocess the image
   image = cv2.resize(face_image, (160, 160))
   image = prewhiten(image)
@@ -69,8 +72,7 @@ def recognize_face(face_image):
           "detected": class_names[best_class_indices[0]],
           "accuracy": float(best_class_probabilities[0])
       }
-  else:
-      return {"message": "Recognition confidence is too low"}
+  return None
 
 def clear_directory(directory_path):
   if os.path.exists(directory_path):
@@ -149,8 +151,8 @@ def upload_image():
           cv2.imwrite(face_filename, face)
 
           result = recognize_face(face)
-          result["filename"] = face_filename
-          results.append(result)
+          if result is not None:
+            results.append(result)
 
       # Clean up the cropped faces directory
       shutil.rmtree(CROPPED_FACE)
@@ -174,4 +176,4 @@ if __name__ == '__main__':
   os.makedirs(EXTRACTION_PATH, exist_ok=True)
   os.makedirs(OUTPUT_PATH, exist_ok=True)
   os.makedirs(CLASS_PATH, exist_ok=True)
-  app.run(host='0.0.0.0', port=80)
+  app.run(host='0.0.0.0', port=5000)
