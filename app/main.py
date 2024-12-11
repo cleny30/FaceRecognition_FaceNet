@@ -5,23 +5,23 @@ import zipfile
 import tempfile
 import cv2
 import numpy as np
-from .facenet import load_model, prewhiten
+from facenet import load_model, prewhiten
 import pickle
 import shutil
 import tensorflow.compat.v1 as tf
-from .classifier import training  # Import the training class
+from classifier import training  # Import the training class
 
-from .data_preprocess import run_preprocessing, clear_directory  # Import the functions
+from data_preprocess import run_preprocessing, clear_directory  # Import the functions
 import logging
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Define the directories for extraction and preprocessing
-EXTRACTION_PATH = './app/train_img'
-OUTPUT_PATH = './app/aligned_img'
-CROPPED_FACE = '/.app/cropped_faces'
-CLASS_PATH = './app/class'
+EXTRACTION_PATH = 'train_img'
+OUTPUT_PATH = 'aligned_img'
+CROPPED_FACE = 'cropped_faces'
+CLASS_PATH = 'class'
 
 # Configure TensorFlow
 tf.disable_v2_behavior()
@@ -29,8 +29,8 @@ gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.6)
 sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
 
 # Load model and parameters
-modeldir = './app/model/20180402-114759.pb'
-classifier_filename = './app/class/classifier.pkl'
+modeldir = './model/20180402-114759.pb'
+classifier_filename = './class/classifier.pkl'
 
 # Load face recognition model
 load_model(modeldir)

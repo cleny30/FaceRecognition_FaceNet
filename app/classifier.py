@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import numpy as np
-from .facenet import get_dataset, load_model, load_data, get_image_paths_and_labels
+from facenet import get_dataset, load_model, load_data, get_image_paths_and_labels
 import os
 import math
 import pickle
